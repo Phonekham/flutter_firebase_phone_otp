@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_firebase_phone_otp/phone.dart';
 import 'package:pinput/pinput.dart';
 
 class MyVerify extends StatefulWidget {
@@ -9,6 +11,7 @@ class MyVerify extends StatefulWidget {
 }
 
 class _MyVerifyState extends State<MyVerify> {
+  final FirebaseAuth auth = FirebaseAuth.instance;
   @override
   Widget build(BuildContext context) {
     final defaultPinTheme = PinTheme(
@@ -34,6 +37,9 @@ class _MyVerifyState extends State<MyVerify> {
         color: Color.fromRGBO(234, 239, 243, 1),
       ),
     );
+
+    var code = '';
+
     return Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(
@@ -88,6 +94,9 @@ class _MyVerifyState extends State<MyVerify> {
                 // submittedPinTheme: submittedPinTheme,
                 showCursor: true,
                 onCompleted: (pin) => print(pin),
+                onChanged: ((value) {
+                  code = value;
+                }),
               ),
               const SizedBox(
                 height: 20,
@@ -100,7 +109,20 @@ class _MyVerifyState extends State<MyVerify> {
                         backgroundColor: Colors.green.shade600,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
-                    onPressed: () {},
+                    onPressed: () async {
+                      try {
+                        // Create a PhoneAuthCredential with the code
+                        PhoneAuthCredential credential =
+                            PhoneAuthProvider.credential(
+                                verificationId: MyPhone.verify, smsCode: code);
+                        // Sign the user in (or link) with the credential
+                        await auth.signInWithCredential(credential);
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, 'home', (route) => false);
+                      } catch (e) {
+                        print(e);
+                      }
+                    },
                     child: const Text("Verify Phone Number")),
               ),
               Row(

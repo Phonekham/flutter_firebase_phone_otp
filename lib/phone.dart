@@ -1,14 +1,18 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class MyPhone extends StatefulWidget {
   const MyPhone({super.key});
+  static String verify = '';
 
   @override
   State<MyPhone> createState() => _MyPhoneState();
 }
 
 class _MyPhoneState extends State<MyPhone> {
+  FirebaseAuth auth = FirebaseAuth.instance;
   TextEditingController countryController = TextEditingController();
+  var phone = "";
 
   @override
   void initState() {
@@ -78,10 +82,13 @@ class _MyPhoneState extends State<MyPhone> {
                   const SizedBox(
                     width: 10,
                   ),
-                  const Expanded(
+                  Expanded(
                       child: TextField(
+                    onChanged: ((value) {
+                      phone = value;
+                    }),
                     keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       border: InputBorder.none,
                       hintText: "Phone",
                     ),
@@ -100,8 +107,27 @@ class _MyPhoneState extends State<MyPhone> {
                       primary: Colors.green.shade600,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10))),
-                  onPressed: () {
-                    Navigator.pushNamed(context, 'verify');
+                  onPressed: () async {
+                    await auth.verifyPhoneNumber(
+                      phoneNumber: countryController.text + phone,
+                      verificationFailed: (FirebaseAuthException e) {
+                        if (e.code == 'invalid-phone-number') {
+                          print('The provided phone number is not valid.');
+                        }
+
+                        // Handle other errors
+                      },
+                      codeAutoRetrievalTimeout: (String verificationId) {},
+                      verificationCompleted:
+                          (PhoneAuthCredential phoneAuthCredential) {
+                        Navigator.pushNamed(context, 'verify');
+                      },
+                      codeSent:
+                          (String verificationId, int? forceResendingToken) {
+                        MyPhone.verify = verificationId;
+                        Navigator.pushNamed(context, 'verify');
+                      },
+                    );
                   },
                   child: Text("Send the code")),
             )
